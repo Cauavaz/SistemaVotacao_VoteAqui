@@ -1,4 +1,7 @@
 <Solution>
+  <Project Path="../VoteAqui.Core/VoteAqui.Core.csproj" Id="92d15e54-29f2-4ba6-9303-394c40f923cc" />
+  <Project Path="../VoteAqui.Infra/VoteAqui.Infra.csproj" Id="86e321be-8f56-4bed-b239-8dc080bcfa6f" />
+  <Project Path="../VoteAqui.Service/VoteAqui.Service.csproj" Id="e3388b13-43f6-448a-9281-b9224110d74c" />
   <Project Path="../VoteAqui_API/VoteAqui_API.csproj" Id="37f9ad1b-aea1-41a4-8da6-651941d26fac" />
   <Project Path="VoteAqui.csproj" />
 </Solution>

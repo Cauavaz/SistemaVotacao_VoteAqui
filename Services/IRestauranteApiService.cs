@@ -1,9 +1,16 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VoteAqui.DTOs;
+using System.Text.Json;
 
 namespace VoteAqui.Services
 {
+    public class RestauranteGanhadorDto
+    {
+        public string RestauranteNome { get; set; } = string.Empty;
+        public int TotalVotos { get; set; }
+    }
+
     public interface IRestauranteApiService
     {
         Task<List<RestauranteDto>> GetRestaurantesAsync();
@@ -15,6 +22,8 @@ namespace VoteAqui.Services
         Task<UltimoCampeaoDto> ObterUltimoCampeaoAsync();
         bool VerificarHorarioBloqueioVotacao();
         Task<bool> GetBloqueioDataAsync(Guid userId);
+        Task<object> GetContagemRestauranteGanhandoAsync();
+        Task<bool> BloquearRestauranteAsync(Guid restauranteId, string NomeRestaurante);
 
     }
 

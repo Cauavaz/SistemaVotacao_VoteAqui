@@ -65,6 +65,7 @@
                             </svg>
                             Adicionar Restaurante
                         </button>
+                     
                     </div>
                 </div>
             </div>
@@ -110,7 +111,6 @@
                             <p class="font-semibold text-blue-900">Regras de Votação</p>
                             <p class="text-blue-800 text-sm mt-1">
                                 • Você pode votar apenas uma vez por dia<br>
-                                • Restaurantes marcados com ⚠️ já foram escolhidos esta semana
                             </p>
                         </div>
                     </div>
@@ -134,11 +134,7 @@
         </div>
 
         <div id="resultsView" class="hidden opacity-0 transition-opacity duration-500">
-            <div class="bg-[#d7282f] to-red-500 text-white rounded-lg p-8 mb-6 text-center shadow-xl">
-                <h2 class="text-3xl font-bold mb-2">🏆 Vencedor do Dia</h2>
-                <p class="text-4xl font-extrabold mt-4" id="winnerName">-</p>
-                <p class="text-xl mt-2 opacity-90" id="winnerVotes">- votos</p>
-            </div>
+ 
 
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-xl font-bold text-gray-800 mb-4">Todos os Votos</h3>
@@ -183,7 +179,8 @@
             weekHistory: [],
             selectedRestaurant: null,
             hasVoted: false,
-            isLoading: true
+            currentWinner: null,  
+            isLoading: false
         };
 
         function renderMiniStats() {
@@ -415,7 +412,7 @@
                         renderMiniStats();
                         const confirmBtn = document.getElementById('confirmButton');
                         if (confirmBtn) confirmBtn.classList.add('hidden');
-                        notyf.success('Voto registrado com sucesso!');
+                        notyf.success(response.mensagem);
                     }
                 },
              error: function (xhr) {
@@ -433,43 +430,60 @@
             });
         }
 
-        function renderResults() {
-            const winner = appData.restaurants.reduce((prev, current) =>
-                (prev.votes > current.votes) ? prev : current
-            , { name: '-', votes: 0 });
-
-            document.getElementById('winnerName').textContent = winner.name;
-            document.getElementById('winnerVotes').textContent = `${winner.votes} votos`;
-
+       function renderResults() {
+    // Busca o ganhador da API
+    $.ajax({
+        url: "@Url.Action("GetContagemRestauranteGanhando", "Restaurante")",
+        type: "GET",
+        contentType: "application/json",
+        success: function (data) {
             const container = document.getElementById('allVotesList');
             if (!container) return;
             container.innerHTML = '';
 
-            const sortedRestaurants = [...appData.restaurants].sort((a, b) => b.votes - a.votes);
-
-            sortedRestaurants.forEach((restaurant, index) => {
-                const item = document.createElement('div');
-                item.className = 'flex items-center gap-4';
-
-                const percentage = winner.votes === 0 ? 0 : Math.round((restaurant.votes / winner.votes) * 100);
-
-                item.innerHTML = `
-                    <span class="text-2xl font-bold text-gray-400 w-8">#${index + 1}</span>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-semibold text-gray-800">${restaurant.name}</span>
-                            <span class="font-bold text-orange-600">${restaurant.votes} votos</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-3">
-                            <div class="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500" style="width:${percentage}%"></div>
-                        </div>
+            const winnerCard = document.createElement('div');
+            winnerCard.className = 'bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200 mb-6';
+            
+            winnerCard.innerHTML = `
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
                     </div>
-                    <div class="w-10 text-right text-xs text-gray-500">${percentage}%</div>
-                `;
+                    <h3 class="text-xl font-bold text-gray-800 mb-1">Ganhador</h3>
+                    <p class="text-3xl font-extrabold text-green-600 mb-2">${data.restauranteNome || 'Nenhum'}</p>
+                    <p class="text-gray-600">${data.totalVotos || 0} votos</p>
+                    <div class="mt-4 text-sm text-gray-500">
+                        Próxima seleção em ${getNextWeekdayName()}
+                    </div>
+                </div>
+            `;
 
-                container.appendChild(item);
-            });
+            container.appendChild(winnerCard);
+        },
+        error: function() {
+            const container = document.getElementById('allVotesList');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-gray-500">
+                        Não foi possível carregar o ganhador no momento.
+                    </div>
+                `;
+            }
         }
+    });
+}
+
+// Função auxiliar para obter o nome do próximo dia da semana
+function getNextWeekdayName() {
+    const weekdays = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", 
+                     "Quinta-feira", "Sexta-feira", "Sábado"];
+    const today = new Date();
+    const nextWeekday = new Date(today);
+    nextWeekday.setDate(today.getDate() + (7 - today.getDay() + 1) % 7);
+    return weekdays[nextWeekday.getDay()];
+}
 
         function renderHistory() {
             const container = document.getElementById('weekHistoryList');
@@ -580,9 +594,12 @@
             if (topWinnerEl && estatisticas.restaurantes && estatisticas.restaurantes.length > 0) {
                 const vencedor = estatisticas.restaurantes[0]; 
                 if (vencedor.totalVotos > 0) {
-                    topWinnerEl.textContent = `${vencedor.restauranteNome} (${vencedor.totalVotos})`;
+                    const displayText = `${vencedor.restauranteNome} (${vencedor.totalVotos})`;
+                    topWinnerEl.textContent = displayText;
+                    topWinnerEl.setAttribute('title', displayText);
                 } else {
                     topWinnerEl.textContent = '-';
+                    topWinnerEl.removeAttribute('title');
                 }
             }
 
@@ -628,7 +645,7 @@
             
             buscarEstatisticas();
             const intervalId = setInterval(buscarEstatisticas, 1000);
-        }
+                    }
 
         window.addEventListener('DOMContentLoaded', init);
 
@@ -723,9 +740,9 @@
                             id = item.id || item.Id || null;
                         }
 
-                        if (nome && id) { // Só adiciona se tiver ID do banco
+                        if (nome && id) { 
                             appData.restaurants.push({
-                                id: id, // Usa apenas ID do banco
+                                id: id, 
                                 name: nome,
                                 votes: item.votes || item.votos || 0,
                                 votedThisWeek: item.votedThisWeek || false
@@ -857,7 +874,6 @@
                 type: "GET",
                 contentType: "application/json",
                 success: function (data) {
-                    console.log("Resposta do GetBloqueioData:", data);
                     
                     if (data == true) {
                         appData.hasVoted = true;
@@ -865,7 +881,6 @@
                         renderResults();
                         renderMiniStats();
                     }
-                    
                 },
                 error: function (e) {
                     console.error("Erro ao buscar dados de bloqueio:", e);
@@ -874,8 +889,108 @@
 
         }
 
+        
+            $(document).ready(function () {
+                verificarHorarioGanhador();
+            });
 
-    
+            function getHoraBrasilia() {
+                return new Date(new Date().toLocaleString("en-US", {
+                    timeZone: "America/Sao_Paulo"
+                }));
+            }
+
+            let jaExecutou = false;
+
+            function verificarHorarioGanhador() {
+                const intervalo = setInterval(() => {
+
+                    if (jaExecutou) {
+                        clearInterval(intervalo);
+                        return;
+                    }
+
+                    const agora = getHoraBrasilia();
+                    const hora = agora.getHours();
+                    const minuto = agora.getMinutes();
+
+                    if (hora === 12 && minuto === 00) {
+                        jaExecutou = true;
+                        clearInterval(intervalo);
+                        getContagemRestauranteGanhando();
+                    }
+
+                }, 1000); 
+            }
+
+        function getContagemRestauranteGanhando() {
+            $.ajax({
+                url: "@Url.Action("GetContagemRestauranteGanhando", "Restaurante")",
+                type: "GET",
+                contentType: "application/json",
+                success: function (data) {
+                 
+                    currentWinner = data.restauranteNome;
+                    EnviaBloqueioRestaurante(currentWinner)
+                },
+                error: function (e) {
+                    console.error("Erro:", e);
+                    notyf.error('Erro ao buscar restaurante ganhador');
+                }
+            });
+        }
+
+        function EnviaBloqueioRestaurante(currentWinner){
+            if (!currentWinner) {
+                notyf.error("Nenhum restaurante vencedor informado");
+                return;
+            }
+
+            const restaurant = appData.restaurants.find(r => 
+                r.name === currentWinner || r.Nome === currentWinner
+            );
+
+            if (!restaurant || !restaurant.id) {
+                notyf.error("Não foi possível encontrar o restaurante vencedor, pois ele ja foi votado");
+                return;
+            }
+
+            const requestData = {
+                RestauranteId: restaurant.id,
+                RestauranteNome: currentWinner
+            };
+
+            $.ajax({
+                url: "@Url.Action("BloquearRestaurante", "Restaurante")",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(requestData),
+                headers: {
+                    'RequestVerificationToken':
+                        document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                success: function (response) {
+                    if (response.sucesso) {
+                        notyf.success(response.mensagem || "Campeão Do dia");
+                        
+                        setTimeout(() => {
+                            chamarAPI();
+                        }, 1000);
+                    } else {
+                        notyf.error(response.mensagem || "Falha ao bloquear restaurante");
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.mensagem) {
+                        notyf.error(xhr.responseJSON.mensagem);
+                    } else {
+                        notyf.error("Erro ao bloquear restaurante. Tente novamente.");
+                    }
+                }
+            });
+        }    
+            
     </script>
 </div>
 </body>

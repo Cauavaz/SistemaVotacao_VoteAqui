@@ -22,7 +22,6 @@ namespace VoteAqui.Controllers
         public async Task<IActionResult> VotarRestaurante([FromBody] VotoDto voto)
         {
             // Verificar se está no horário de bloqueio (12:01 até 23:59)
-            // teste caua Verificar se está no horário de bloqueio (12:01 até 23:59)
 
             if (_restauranteApiService.VerificarHorarioBloqueioVotacao())
             {
@@ -63,16 +62,16 @@ namespace VoteAqui.Controllers
 
             voto.UsuarioId = userIdParsed;
 
-            //// Validação: verificar se restaurante já foi escolhido esta semana
-            //var resultadoValidacao = await _restauranteApiService.VerificarRestauranteEscolhidoEstaSemanaAsync(voto.RestauranteId);
-            //if (!resultadoValidacao)
-            //{
-            //    return BadRequest(new
-            //    {
-            //        Sucesso = false,
-            //        Mensagem = "Este restaurante já foi escolhido esta semana. Escolha outra opção!"
-            //    });
-            //}
+            // validação: verificar se restaurante já foi escolhido esta semana
+            var resultadovalidacao = await _restauranteApiService.VerificarRestauranteEscolhidoEstaSemanaAsync(voto.RestauranteId);
+            if (!resultadovalidacao)
+            {
+                return BadRequest(new
+                {
+                    sucesso = false,
+                    mensagem = "este restaurante já foi escolhido esta semana. escolha outra opção!"
+                });
+            }
 
             var resultado = await _restauranteApiService.VotarAsync(voto);
 

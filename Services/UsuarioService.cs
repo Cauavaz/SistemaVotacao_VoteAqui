@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using System.Net.Http.Json;
 using VoteAqui.DTOs;
 
@@ -6,18 +7,21 @@ namespace VoteAqui.Services
     public class UsuarioService : IUsuarioService
     {
         private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
 
-        public UsuarioService(HttpClient httpClient)
+        public UsuarioService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
+            _configuration = configuration;
         }
 
         public async Task<bool> CadastrarUsuarioAsync(CadastroUsuarioDto usuario)
         {
             try
             {
-                var apiUrl = "https://localhost:7295/api/Usuario/cadastrarUsuario";
-                var response = await _httpClient.PostAsJsonAsync($"{apiUrl}", usuario);
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var apiUrl = $"{baseUrl}api/Usuario/cadastrarUsuario";
+                var response = await _httpClient.PostAsJsonAsync(apiUrl, usuario);
 
                 return response.IsSuccessStatusCode;
             }
@@ -32,8 +36,9 @@ namespace VoteAqui.Services
         {
             try
             {
-                var apiUrl = "https://localhost:7295/api/Usuario/login";
-                var response = await _httpClient.PostAsJsonAsync($"{apiUrl}", login);
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var apiUrl = $"{baseUrl}api/Usuario/login";
+                var response = await _httpClient.PostAsJsonAsync(apiUrl, login);
 
                 if (response.IsSuccessStatusCode)
                 {

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VoteAqui.Services;
+using VoteAqui.DTOs;
 using System.Threading.Tasks;
 
 namespace VoteAqui.Controllers
@@ -33,6 +34,13 @@ namespace VoteAqui.Controllers
             }
             
             var result = await _restauranteApiService.GetBloqueioDataAsync(userId);
+            return Ok(result);
+        }
+
+        [HttpGet("GetContagemRestauranteGanhando")]
+        public async Task<ActionResult<object>> GetContagemRestauranteGanhando()
+        {
+            var result = await _restauranteApiService.GetContagemRestauranteGanhandoAsync();
             return Ok(result);
         }
 
@@ -73,6 +81,49 @@ namespace VoteAqui.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("BloquearRestaurante")]
+        public async Task<IActionResult> BloquearRestaurante([FromBody] BloqueioRestauranteDto data)
+        {
+            try
+            {
+                if (data == null || data.RestauranteId == Guid.Empty)
+                {
+                    return BadRequest(new
+                    {
+                        Sucesso = false,
+                        Mensagem = "Dados do restaurante inválidos"
+                    });
+                }
+
+                var sucesso = await _restauranteApiService.BloquearRestauranteAsync(data.RestauranteId, data.RestauranteNome);
+
+                if (sucesso)
+                {
+                    return Ok(new
+                    {
+                        Sucesso = true,
+                        Mensagem = $"Restaurante Ganhador: ({data.RestauranteNome})"
+                    });
+                }
+                else
+               {
+                    return BadRequest(new
+                    {
+                        Sucesso = false,
+                        Mensagem = "Restaurante ja foi escolhido como ganhador essa semana!"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Sucesso = false,
+                    Mensagem = $"Erro ao bloquear restaurante: {ex.Message}"
+                });
             }
         }
 

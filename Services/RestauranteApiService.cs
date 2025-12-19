@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using VoteAqui.DTOs;
@@ -24,7 +25,8 @@ namespace VoteAqui.Services
         {
             try
             {
-                var apiUrl = "https://localhost:7295/api/Restaurante";
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var apiUrl = $"{baseUrl}api/Restaurante";
                 var response = await _httpClient.GetFromJsonAsync<List<RestauranteDto>>($"{apiUrl}");
                 return response ?? new List<RestauranteDto>();
             }
@@ -39,7 +41,8 @@ namespace VoteAqui.Services
         {
             try
             {
-                var apiUrl = $"https://localhost:7295/api/restaurante/meu-status-votos?userId={userId}";
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var apiUrl = $"{baseUrl}api/restaurante/meu-status-votos?userId={userId}";
                 var response = await _httpClient.GetFromJsonAsync<object>(apiUrl);
 
                 if (response is JsonElement json)
@@ -62,7 +65,8 @@ namespace VoteAqui.Services
         {
             try
             {
-                var apiUrl = "https://localhost:7295/api/Restaurante";
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var apiUrl = $"{baseUrl}api/Restaurante";
                 var response = await _httpClient.PostAsJsonAsync($"{apiUrl}", restaurante);
                 return response.IsSuccessStatusCode;
             }
@@ -79,7 +83,8 @@ namespace VoteAqui.Services
             {
                 Console.WriteLine($"Enviando voto para API externa: RestauranteId={voto?.RestauranteId}, UsuarioId={voto?.UsuarioId}");
                 
-                var apiUrl = "https://localhost:7295/api/Voto/votar";
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var apiUrl = $"{baseUrl}api/Voto/votar";
                 var response = await _httpClient.PostAsJsonAsync($"{apiUrl}", voto);
                 
                 if (response.IsSuccessStatusCode)
@@ -116,7 +121,8 @@ namespace VoteAqui.Services
         {
             try
             {
-                var url = $"https://localhost:7295/api/voto/verificacao/restaurante-semana?restauranteId={restauranteId}";
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var url = $"{baseUrl}api/voto/verificacao/restaurante-semana?restauranteId={restauranteId}";
                 var response = await _httpClient.GetAsync(url);
 
                 if (!response.IsSuccessStatusCode)
@@ -138,7 +144,8 @@ namespace VoteAqui.Services
             {
                 Console.WriteLine("Buscando estatísticas da API externa");
                 
-                var response = await _httpClient.GetAsync("https://localhost:7295/api/Voto/estatisticas");
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var response = await _httpClient.GetAsync($"{baseUrl}api/Voto/estatisticas");
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -165,7 +172,8 @@ namespace VoteAqui.Services
             {
                 Console.WriteLine("Buscando estatísticas da API externa");
 
-                var response = await _httpClient.GetAsync("https://localhost:7295/api/Voto/estatisticas");
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var response = await _httpClient.GetAsync($"{baseUrl}api/Voto/estatisticas");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -260,16 +268,81 @@ namespace VoteAqui.Services
         {
             var agora = DateTime.Now;
             var hora = agora.Hour;
-            var minuto = agora.Minute;
             
-            // Bloquear das 12:01 até 23:59
-            if (hora > 14 || (hora == 14 && minuto > 57))
+            // Bloquear das 12:00 até 23:59
+            if (hora >= 12)
             {
-                return true; // Bloqueado
+                return true; 
             }
             
-            return false; // Liberado
+            return false; 
         }
 
+        public async Task<object> GetContagemRestauranteGanhandoAsync()
+        {
+            try
+            {
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var response = await _httpClient.GetAsync($"{baseUrl}api/Restaurante/Ganhador");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var ganhador = JsonSerializer.Deserialize<RestauranteGanhadorDto>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    
+                    return new { 
+                        RestauranteNome = ganhador?.RestauranteNome ?? "Sem dados", 
+                        TotalVotos = ganhador?.TotalVotos ?? 0 
+                    };
+                }
+                else
+                {
+                    return new { 
+                        RestauranteNome = "Erro na API", 
+                        TotalVotos = 0 
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao buscar restaurante ganhador: {ex.Message}");
+                return new { 
+                    RestauranteNome = "Erro de conexão", 
+                    TotalVotos = 0 
+                };
+            }
         }
+
+    public async Task<bool> BloquearRestauranteAsync(Guid restauranteId, string NomeRestaurante)
+        {
+            try
+            {
+                var baseUrl = _configuration.GetSection("ApiSettings:BaseUrl").Value;
+                var apiUrl = $"{baseUrl}api/Restaurante/bloquear/{restauranteId}";
+                
+                var content = new StringContent(JsonSerializer.Serialize(NomeRestaurante), Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync(apiUrl, content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Restaurante {restauranteId} ({NomeRestaurante}) bloqueado com sucesso");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"Erro ao bloquear restaurante: {response.StatusCode}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao bloquear restaurante: {ex.Message}");
+                return false;
+            }
+        }
+
+    }
 }
