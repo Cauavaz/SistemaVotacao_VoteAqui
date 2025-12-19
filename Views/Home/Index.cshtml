@@ -1,0 +1,882 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certponto Lunch - Sistema de Votação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="~/Views/Home/voting-persistence.js"></script>
+
+    <script src="~/js/site.js"></script>
+    
+    <style>
+        #restaurantList::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        #restaurantList::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        #restaurantList::-webkit-scrollbar-thumb {
+            background: #d7282f;
+            border-radius: 4px;
+        }
+        
+        #restaurantList::-webkit-scrollbar-thumb:hover {
+            background: #b32026;
+        }
+        
+        .restaurant-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#e5e7eb] to-red-50">
+
+    <header class="bg-white shadow-md">
+        <div class="mx-auto px-4 py-6">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-[#d7282f]">Team Restaurante</h1>
+                    <p class="text-gray-600 mt-1">Sistema de Votação de Restaurantes</p>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2 text-sm">
+                            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span class="font-semibold">Votação até 12:00</span>
+                        </div>
+                        <button id="btnAddRestaurant" class="ml-4 inline-flex items-center gap-2 bg-[#10b981] hover:bg-[#0ea56f] text-white px-4 py-2 rounded-lg font-semibold transition-shadow shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Adicionar Restaurante
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="mx-auto mt-6">
+        <div class="bg-white rounded-lg shadow-sm p-2 flex gap-2">
+            <button onclick="showView('voting')" id="btnVoting" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all bg-[#d7282f] text-white">
+                <svg class="w-5 h-5 inline mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Votar
+            </button>
+            <button onclick="showView('results')" id="btnResults" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all text-gray-600 hover:bg-gray-100">
+                <svg class="w-5 h-5 inline mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                Resultado
+            </button>
+          
+        </div>
+    </div>
+
+    <main class="mx-auto px-1 py-8">
+
+        <div id="votingView" class="opacity-0 transition-opacity duration-500">
+            <div id="votedMessage" class="bg-green-50 border-2 border-green-200 rounded-lg p-8 text-center hidden">
+                <svg class="w-16 h-16 text-green-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h2 class="text-2xl font-bold text-green-800 mb-2">Voto Registrado!</h2>
+                <p class="text-green-700">Seu voto foi contabilizado com sucesso. Aguarde o resultado às 12:00.</p>
+            </div>
+
+            <div id="votingContent" class="bg-white p-4 rounded-lg">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-blue-900">Regras de Votação</p>
+                            <p class="text-blue-800 text-sm mt-1">
+                                • Você pode votar apenas uma vez por dia<br>
+                                • Restaurantes marcados com ⚠️ já foram escolhidos esta semana
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:flex lg:items-start lg:gap-6 ">
+                    <div class="flex-1">
+                        <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto max-h-[390px] p-4 bg-gray-100 rounded-lg" id="restaurantList"></div>
+                    </div>
+
+                    @await Html.PartialAsync("_Graficos") @* partial do Gráfico *@
+
+                </div>
+
+                <div id="confirmButton" class="text-center hidden">
+                    <button onclick="confirmVote()" class="bg-[#d7282f] text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#b32026] transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
+                        Confirmar Voto
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsView" class="hidden opacity-0 transition-opacity duration-500">
+            <div class="bg-[#d7282f] to-red-500 text-white rounded-lg p-8 mb-6 text-center shadow-xl">
+                <h2 class="text-3xl font-bold mb-2">🏆 Vencedor do Dia</h2>
+                <p class="text-4xl font-extrabold mt-4" id="winnerName">-</p>
+                <p class="text-xl mt-2 opacity-90" id="winnerVotes">- votos</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Todos os Votos</h3>
+                <div class="space-y-3" id="allVotesList"></div>
+            </div>
+        </div>
+
+    
+    </main>
+
+    <div id="addRestaurantModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 px-4">
+        <div class="bg-white rounded-xl w-full max-w-2xl shadow-xl ring-1 ring-black/5 overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-800">Adicionar Restaurante</h3>
+                <button id="btnCloseAddModal" class="text-gray-500 hover:text-gray-700" aria-label="Fechar">✕</button>
+            </div>
+            <form id="addRestaurantForm" class="px-6 py-6">
+                <div class="mb-4">
+                    <label for="newRestaurantName" class="block text-sm font-medium text-gray-700 mb-2">Nome do restaurante</label>
+                    <input id="newRestaurantName" name="name" type="text" required maxlength="200" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d7282f]" />
+                </div>
+                <div class="mb-4">
+                    <label for="newRestaurantAddress" class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                    <textarea id="newRestaurantAddress" name="address" rows="3" required maxlength="500" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d7282f]"></textarea>
+                </div>
+
+                <div id="addFormStatus" class="text-sm text-red-600 mb-4 hidden"></div>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="btnCancelAdd" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Cancelar</button>
+                    <button onclick="sendRestaurant()" class="px-4 py-2 rounded-lg bg-[#10b981] text-white hover:bg-[#0ea56f]">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="mt-12 pb-6 text-center text-gray-600 text-sm"></footer>
+
+    <script>
+        const appData = {
+            restaurants: [],
+            weekHistory: [],
+            selectedRestaurant: null,
+            hasVoted: false,
+            isLoading: true
+        };
+
+        function renderMiniStats() {
+            if (typeof appData === 'undefined') return;
+            const total = appData.restaurants.reduce((s, r) => s + (r.votes || 0), 0);
+            const sorted = [...appData.restaurants].sort((a, b) => b.votes - a.votes);
+            const winner = sorted[0] || null;
+
+            const miniTotalEl = document.getElementById('miniTotalVotes');
+            const miniTopEl = document.getElementById('miniTopWinner');
+            if (miniTotalEl) miniTotalEl.textContent = total;
+
+            if (miniTopEl) {
+                if (winner && winner.votes > 0) {
+                    miniTopEl.textContent = `${winner.name} (${winner.votes})`;
+                } else {
+                    miniTopEl.textContent = '';
+                }
+            }
+
+            const chart = document.getElementById('miniChart');
+            if (!chart) return;
+            chart.innerHTML = '';
+            const denom = total === 0 ? 1 : total;
+            sorted.forEach(r => {
+                const pct = Math.round((r.votes / denom) * 100);
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-3 mb-2';
+                row.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-medium text-gray-800 truncate">${r.name}</span>
+                            <span class="text-sm text-gray-600 ml-2">${r.votes}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                            <div class="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                    <div class="w-10 text-right text-xs text-gray-500">${pct}%</div>
+                `;
+                chart.appendChild(row);
+            });
+        }
+
+        if (!window._miniStatsInterval) {
+            renderMiniStats();
+            window._miniStatsInterval = setInterval(renderMiniStats, 1000);
+        } else {
+            renderMiniStats();
+        }
+
+        function showView(view) {
+            const views = ['votingView', 'resultsView'];
+            const buttons = ['btnVoting', 'btnResults', 'btnHistory'];
+
+            views.forEach(v => {
+                const el = document.getElementById(v);
+                if (el) el.classList.add('hidden', 'opacity-0');
+            });
+
+            buttons.forEach(btn => {
+                const el = document.getElementById(btn);
+                if (el) {
+                    el.className = 'flex-1 py-3 px-4 rounded-lg font-semibold transition-all text-gray-600 hover:bg-gray-100';
+                    const svg = el.querySelector('svg');
+                    if (svg) svg.classList.add('inline', 'mr-2', '-mt-1');
+                }
+            });
+
+            const activeView = view + 'View';
+            const activeBtn = 'btn' + view.charAt(0).toUpperCase() + view.slice(1);
+
+            setTimeout(() => {
+                const av = document.getElementById(activeView);
+                if (av) {
+                    av.classList.remove('hidden');
+                    setTimeout(() => av.classList.remove('opacity-0'), 10);
+                }
+            }, 300);
+
+            const ab = document.getElementById(activeBtn);
+            if (ab) ab.className = 'flex-1 py-3 px-4 rounded-lg font-semibold transition-all bg-[#d7282f] text-white';
+        }
+
+        function renderRestaurants() {
+            const container = document.getElementById('restaurantList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (appData.isLoading && appData.restaurants.length === 0) {
+                for (let i = 0; i < 4; i++) {
+                    const sk = document.createElement('div');
+                    sk.className = 'bg-white rounded-lg shadow-md p-6 animate-pulse';
+                    sk.innerHTML = `
+                        <div class="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/3 mb-3"></div>
+                        <div class="h-3 bg-gray-200 rounded w-full"></div>
+                    `;
+                    container.appendChild(sk);
+                }
+                return;
+            }
+
+            if (appData.restaurants.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'bg-white rounded-lg shadow-md p-6 text-center text-gray-600';
+                empty.textContent = 'Nenhum restaurante disponível.';
+                container.appendChild(empty);
+                return;
+            }
+
+            appData.restaurants.forEach(restaurant => {
+                const card = document.createElement('div');
+
+                // Classes base do card
+                let classes = 'bg-white rounded-lg shadow-md p-4 transition-all duration-300 relative';
+                
+                // Se o usuário já votou, TODOS os cards ficam bloqueados
+                if (appData.hasVoted) {
+                    classes += ' opacity-60 cursor-not-allowed bg-gray-50 border-2 border-gray-200';
+                } else if (restaurant.votedThisWeek) {
+                    // Se não votou hoje mas restaurante já foi escolhido esta semana
+                    classes += ' opacity-50 cursor-not-allowed bg-yellow-50 border-2 border-yellow-200';
+                } else if (appData.selectedRestaurant === restaurant.id) {
+                    // Card selecionado para votar
+                    classes += ' ring-4 ring-red-500 transform scale-105 cursor-pointer bg-red-50 border-2 border-red-200';
+                } else {
+                    // Card normal disponível para votação
+                    classes += ' hover:shadow-lg hover:transform hover:scale-102 cursor-pointer hover:bg-red-50 border-2 border-transparent';
+                }
+
+                card.className = classes;
+
+                // Adicionar indicador visual de bloqueio
+                let blockedIndicator = '';
+                if (appData.hasVoted) {
+                    blockedIndicator = `
+                        <div class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 z-10">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <div class="absolute inset-0 bg-gray-900 bg-opacity-10 rounded-lg z-0"></div>
+                    `;
+                } else if (restaurant.votedThisWeek) {
+                    blockedIndicator = `
+                        <div class="absolute top-2 right-2 bg-yellow-500 text-white rounded-full p-2 z-10">
+                            <span class="text-xl">⚠️</span>
+                        </div>
+                    `;
+                }
+
+                // Permitir clique apenas se não tiver votado hoje e restaurante não tiver sido escolhido esta semana
+                if (!appData.hasVoted && !restaurant.votedThisWeek) {
+                    card.onclick = () => selectRestaurant(restaurant.id);
+                }
+
+                card.innerHTML = `
+                    ${blockedIndicator}
+                    <div class="relative z-1">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-bold text-gray-800 restaurant-name pr-8">${restaurant.name}</h3>
+                            ${restaurant.votedThisWeek && !appData.hasVoted ? '<span class="text-yellow-600 text-xl">⚠️</span>' : ''}
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center text-gray-600">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span class="text-sm font-semibold">${restaurant.votes} voto${restaurant.votes !== 1 ? 's' : ''}</span>
+                            </div>
+                            ${appData.selectedRestaurant === restaurant.id && !appData.hasVoted ? `
+                                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            ` : ''}
+                        </div>
+                        ${restaurant.votedThisWeek && !appData.hasVoted ? '<p class="text-xs text-yellow-700 mt-2 font-semibold">Já escolhido esta semana</p>' : ''}
+                        ${appData.hasVoted ? '<p class="text-xs text-red-600 mt-2 font-semibold">Votação encerrada para hoje</p>' : ''}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function selectRestaurant(id) {
+            if (appData.hasVoted) return;
+            appData.selectedRestaurant = id;
+            renderRestaurants();
+            const cb = document.getElementById('confirmButton');
+            if (cb) cb.classList.remove('hidden');
+        }
+
+         const notyf = new Notyf({
+            duration: 3000,
+            position: { x: 'right', y: 'top' }
+        });
+
+        function confirmVote() {
+            if (!appData.selectedRestaurant || appData.hasVoted) return;
+
+            const restaurant = appData.restaurants.find(
+                r => r.id === appData.selectedRestaurant
+            );
+
+            if (!restaurant) return;
+
+            const requestData = {
+                RestauranteId: restaurant.id
+            };
+
+            $.ajax({
+                url: "@Url.Action("VotarRestaurante", "Votacao")",
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(requestData),
+                headers: {
+                    'RequestVerificationToken':
+                        document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                success: function (response) {
+                    if (response.sucesso) {
+                        restaurant.votes++;
+                        appData.hasVoted = true;
+                        renderRestaurants();
+                        renderResults();
+                        renderMiniStats();
+                        const confirmBtn = document.getElementById('confirmButton');
+                        if (confirmBtn) confirmBtn.classList.add('hidden');
+                        notyf.success('Voto registrado com sucesso!');
+                    }
+                },
+             error: function (xhr) {
+                    if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.mensagem) {
+                        const mensagem = xhr.responseJSON.mensagem;
+                        if (mensagem.includes("Votação encerrada")) {
+                            notyf.error("Votação encerrada! Horário permitido: até 12:00.");
+                        } else {
+                            notyf.error(mensagem);
+                        }
+                    } else {
+                        notyf.error("Erro ao registrar voto. Tente novamente.");
+                    }
+                }
+            });
+        }
+
+        function renderResults() {
+            const winner = appData.restaurants.reduce((prev, current) =>
+                (prev.votes > current.votes) ? prev : current
+            , { name: '-', votes: 0 });
+
+            document.getElementById('winnerName').textContent = winner.name;
+            document.getElementById('winnerVotes').textContent = `${winner.votes} votos`;
+
+            const container = document.getElementById('allVotesList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const sortedRestaurants = [...appData.restaurants].sort((a, b) => b.votes - a.votes);
+
+            sortedRestaurants.forEach((restaurant, index) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-4';
+
+                const percentage = winner.votes === 0 ? 0 : Math.round((restaurant.votes / winner.votes) * 100);
+
+                item.innerHTML = `
+                    <span class="text-2xl font-bold text-gray-400 w-8">#${index + 1}</span>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-gray-800">${restaurant.name}</span>
+                            <span class="font-bold text-orange-600">${restaurant.votes} votos</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500" style="width:${percentage}%"></div>
+                        </div>
+                    </div>
+                    <div class="w-10 text-right text-xs text-gray-500">${percentage}%</div>
+                `;
+
+                container.appendChild(item);
+            });
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('weekHistoryList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!appData.weekHistory || appData.weekHistory.length === 0) {
+                const info = document.createElement('div');
+                info.className = 'text-gray-600';
+                info.textContent = 'Nenhum histórico disponível.';
+                container.appendChild(info);
+                return;
+            }
+
+            appData.weekHistory.forEach(day => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all';
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-[#d7282f] rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-[#ffffff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">${day.day}</h3>
+                            <p class="text-sm text-gray-600">${day.restaurant === '-' ? 'Sem votação' : day.restaurant}</p>
+                        </div>
+                    </div>
+                    ${day.votes > 0 ? `
+                        <div class="text-right">
+                            <p class="font-bold text-orange-600">${day.votes}</p>
+                            <p class="text-xs text-gray-500">votos</p>
+                        </div>
+                    ` : ''}
+                `;
+            });
+        }
+
+            function buscarEstatisticas() {
+            new Date().toLocaleTimeString();
+
+            $.ajax({
+                url: "@Url.Action("GetEstatisticas", "Votacao")",
+                type: 'GET',
+                contentType: 'application/json',
+                timeout: 2000,
+                success: function (votos) {
+
+                    if (Array.isArray(votos)) {
+
+                        // Agrupa votos por restaurante
+                        const votosPorRestaurante = {};
+                        votos.forEach(voto => {
+                            if (voto && voto.restauranteId) {
+                                votosPorRestaurante[voto.restauranteId] =
+                                    (votosPorRestaurante[voto.restauranteId] || 0) + 1;
+                            }
+                        });
+
+                        // Atualiza votos nos restaurantes
+                        appData.restaurants.forEach(restaurante => {
+                            const votosCount = votosPorRestaurante[restaurante.id] || 0;
+                            restaurante.votes = votosCount;
+                        });
+
+                        // Re-renderiza componentes com dados atualizados
+                        renderRestaurants();
+                        renderResults();
+                        renderMiniStats();
+
+                    } else if (votos && votos.error) {
+                        alert('Erro ao buscar estatísticas: ' + votos.message);
+                    } else {
+                        setTimeout(buscarEstatisticas, 2000);
+                    }
+                },
+                error: function (xhr, status) {
+
+                    if (xhr.status === 500) {
+                        try {
+                            const errorData = JSON.parse(xhr.responseText);
+                            alert('Erro no servidor: ' + errorData.message);
+                        } catch (e) {
+                            alert('Erro interno do servidor ao buscar estatísticas');
+                        }
+                    } else if (status === 'timeout') {
+                        setTimeout(buscarEstatisticas, 3000);
+                    } else {
+                        setTimeout(buscarEstatisticas, 2000);
+                    }
+                }
+            });
+        }
+
+
+        function atualizarCardEstatisticas(estatisticas) {
+            const totalVotesEl = document.getElementById('miniTotalVotes');
+            if (totalVotesEl) {
+                totalVotesEl.textContent = estatisticas.totalVotos || 0;
+            }
+
+            const topWinnerEl = document.getElementById('miniTopWinner');
+            if (topWinnerEl && estatisticas.restaurantes && estatisticas.restaurantes.length > 0) {
+                const vencedor = estatisticas.restaurantes[0]; 
+                if (vencedor.totalVotos > 0) {
+                    topWinnerEl.textContent = `${vencedor.restauranteNome} (${vencedor.totalVotos})`;
+                } else {
+                    topWinnerEl.textContent = '-';
+                }
+            }
+
+            const chartEl = document.getElementById('miniChart');
+            if (chartEl && estatisticas.restaurantes) {
+                chartEl.innerHTML = '';
+                
+                estatisticas.restaurantes.forEach(restaurante => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center gap-3 mb-2';
+                    row.innerHTML = `
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm font-medium text-gray-800 truncate">${restaurante.restauranteNome}</span>
+                                <span class="text-sm text-gray-600 ml-2">${restaurante.totalVotos}</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div class="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500" style="width:${restaurante.percentual}%"></div>
+                            </div>
+                        </div>
+                        <div class="w-10 text-right text-xs text-gray-500">${Math.round(restaurante.percentual)}%</div>
+                    `;
+                    chartEl.appendChild(row);
+                });
+            }
+
+            const lastUpdateEl = document.querySelector('#miniStatsPanel .text-xs.text-gray-400');
+            if (lastUpdateEl) {
+                const agora = new Date();
+                lastUpdateEl.textContent = `Última atualização: ${agora.toLocaleTimeString('pt-BR')}`;
+            }
+        }
+
+        function init() {
+            renderRestaurants();
+            renderResults();
+            renderHistory();
+            renderMiniStats();
+
+            document.getElementById('votingView').classList.remove('opacity-0');
+
+            chamarAPI();
+            
+            buscarEstatisticas();
+            const intervalId = setInterval(buscarEstatisticas, 1000);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+
+        (function () {
+            const btnOpen = document.getElementById('btnAddRestaurant');
+            const modal = document.getElementById('addRestaurantModal');
+            const btnClose = document.getElementById('btnCloseAddModal');
+            const btnCancel = document.getElementById('btnCancelAdd');
+            const form = document.getElementById('addRestaurantForm');
+            const status = document.getElementById('addFormStatus');
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                setTimeout(() => {
+                    const input = document.getElementById('newRestaurantName');
+                    if (input) input.focus();
+                }, 50);
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                status.classList.add('hidden');
+                status.textContent = '';
+                form.reset();
+            }
+
+            if (btnOpen) btnOpen.addEventListener('click', openModal);
+            if (btnClose) btnClose.addEventListener('click', closeModal);
+            if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeModal();
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                status.classList.add('hidden');
+                status.textContent = '';
+
+                const name = document.getElementById('newRestaurantName').value.trim();
+                const address = document.getElementById('newRestaurantAddress').value.trim();
+
+                if (!name || !address) {
+                    status.textContent = 'Preencha todos os campos.';
+                    status.classList.remove('hidden');
+                    return;
+                }
+
+                const nextId = appData.restaurants.reduce((m, r) => Math.max(m, r.id), 0) + 1;
+                const newRestaurant = { id: nextId, name, address, votes: 0, votedThisWeek: false };
+                appData.restaurants.push(newRestaurant);
+
+                renderRestaurants();
+                renderMiniStats();
+
+                closeModal();
+                showView('voting');
+            });
+        })();
+
+        async function chamarAPI() {
+            appData.isLoading = true;
+            renderRestaurants();
+
+            try {
+                let response = await fetch('/Restaurante/GetRestaurante', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar restaurantes: ' + response.status);
+                }
+
+                const data = await response.json();
+
+                  getBloqueioData();
+
+                if (data && Array.isArray(data)) {
+                    appData.restaurants = [];
+                    data.forEach((item, index) => {
+                        let nome = '';
+                        let id = null;
+                        
+                        if (typeof item === 'string') {
+                            nome = item;
+                        } else if (item && typeof item === 'object') {
+                            nome = item.nome || item.name || '';
+                            id = item.id || item.Id || null;
+                        }
+
+                        if (nome && id) { // Só adiciona se tiver ID do banco
+                            appData.restaurants.push({
+                                id: id, // Usa apenas ID do banco
+                                name: nome,
+                                votes: item.votes || item.votos || 0,
+                                votedThisWeek: item.votedThisWeek || false
+                            });
+                        }
+                    });
+                } else if (data && Array.isArray(data.restaurants)) {
+                    appData.restaurants = data.restaurants
+                        .filter(r => r.id) // Filtra só itens com ID
+                        .map(r => ({
+                            id: r.id, // Usa apenas ID do banco
+                            name: r.name,
+                            votes: r.votes ?? 0,
+                            votedThisWeek: r.votedThisWeek ?? false
+                        }));
+                } else {
+                    console.warn('Resposta da API num formato inesperado:', data);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+            } finally {
+                appData.isLoading = false;
+                renderRestaurants();
+                renderResults();
+                renderMiniStats();
+                renderHistory();
+            }
+        }
+
+        function sendRestaurant() {
+            const nomeRestaurante = document.getElementById("newRestaurantName").value;
+            const enderecoRestaurante = document.getElementById("newRestaurantAddress").value;
+
+            $.ajax({
+                url: "@Url.Action("InserirRestaurante", "Restaurante")",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    nome: nomeRestaurante,
+                    endereco: enderecoRestaurante
+                }),
+                success: function (data) {
+
+                    const modal = document.getElementById('addRestaurantModal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                    }
+                    document.body.classList.remove('overflow-hidden');
+
+                    const form = document.getElementById('addRestaurantForm');
+                    if (form) form.reset();
+
+                    const status = document.getElementById('addFormStatus');
+                    if (status) {
+                        status.classList.add('hidden');
+                        status.textContent = '';
+                    }
+
+                    if (typeof escondeLoadPanel === 'function') escondeLoadPanel();
+                    if (typeof escondeAviso === 'function') escondeAviso();
+
+                    if (typeof chamarAPI === 'function') {
+                        chamarAPI();
+                    } else {
+                        renderRestaurants();
+                        renderMiniStats();
+                    }
+                },
+                error: function (e) {
+                    console.error(e);
+                    notifica("Erro ao cadastrar restaurante", false);
+                }
+
+            });
+
+        }
+
+        function sendRestaurant() {
+            const nomeRestaurante = document.getElementById("newRestaurantName").value;
+            const enderecoRestaurante = document.getElementById("newRestaurantAddress").value;
+
+            $.ajax({
+                url: "@Url.Action("InserirRestaurante", "Restaurante")",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    nome: nomeRestaurante,
+                    endereco: enderecoRestaurante
+                }),
+                success: function (data) {
+
+                    const modal = document.getElementById('addRestaurantModal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                    }
+                    document.body.classList.remove('overflow-hidden');
+
+                    const form = document.getElementById('addRestaurantForm');
+                    if (form) form.reset();
+
+                    const status = document.getElementById('addFormStatus');
+                    if (status) {
+                        status.classList.add('hidden');
+                        status.textContent = '';
+                    }
+
+                    if (typeof escondeLoadPanel === 'function') escondeLoadPanel();
+                    if (typeof escondeAviso === 'function') escondeAviso();
+
+                    if (typeof chamarAPI === 'function') {
+                        chamarAPI();
+                    } else {
+                        renderRestaurants();
+                        renderMiniStats();
+                    }
+                },
+                error: function (e) {
+                    console.error(e);
+                    notifica("Erro ao cadastrar restaurante", false);
+                }
+
+            });
+
+        }
+
+        function getBloqueioData(){
+             $.ajax({
+                url: "@Url.Action("GetBloqueioData", "Restaurante")",
+                type: "GET",
+                contentType: "application/json",
+                success: function (data) {
+                    console.log("Resposta do GetBloqueioData:", data);
+                    
+                    if (data == true) {
+                        appData.hasVoted = true;
+                        renderRestaurants();
+                        renderResults();
+                        renderMiniStats();
+                    }
+                    
+                },
+                error: function (e) {
+                    console.error("Erro ao buscar dados de bloqueio:", e);
+                }
+            });
+
+        }
+
+
+    
+    </script>
+</div>
+</body>
+</html>

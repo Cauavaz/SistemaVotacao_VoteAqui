@@ -1,0 +1,23 @@
+﻿<aside id="miniStatsPanel" class="w-full lg:w-96 bg-white rounded-lg shadow-md p-4">
+    <h3 class="text-lg font-bold text-gray-800 mb-3">Estatísticas (em tempo real)</h3>
+
+    <div class="space-y-3 mb-3">
+        <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">Total de votos</span>
+            <span id="miniTotalVotes" class="font-bold text-[#d7282f]">0</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600  font-extrabold text-green-500">Vencedor atual</span>
+            <span id="miniTopWinner" class="font-semibold text-gray-800">-</span>
+        </div>
+    </div>
+
+    <div>
+        <p class="text-sm text-gray-600 mb-2">Distribuição</p>
+        <div id="miniChart" class="space-y-2 overflow-y-auto h-[14vh]"></div>
+    </div>
+
+    <div class="text-xs text-gray-400 mt-3">
+        Atualizado automaticamente a cada segundo.
+    </div>
+</aside>

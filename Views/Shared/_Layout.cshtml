@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - VoteAqui</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="~/css/site.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/VoteAqui.styles.css" asp-append-version="true" />
+</head>
+<body>
+    @if (!string.IsNullOrEmpty(Context.Session.GetString("UserEmail")))
+    {
+        <div class="user-info-bar bg-light border-bottom">
+            <div class="container">
+                <div class="d-flex justify-content-end align-items-center py-2">
+                    <span class="me-3">
+                        <i class="bi bi-person-circle"></i>
+                        Logado como: <strong>@Context.Session.GetString("UserEmail")</strong>
+                    </span>
+                    <form asp-controller="Login" asp-action="Logout" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-box-arrow-right"></i> Sair
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+   
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../VoteAqui_API/VoteAqui_API.csproj" Id="37f9ad1b-aea1-41a4-8da6-651941d26fac" />
+  <Project Path="VoteAqui.csproj" />
+</Solution>
