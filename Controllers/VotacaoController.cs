@@ -23,14 +23,14 @@ namespace VoteAqui.Controllers
         {
             // Verificar se está no horário de bloqueio (12:01 até 23:59)
 
-            if (_restauranteApiService.VerificarHorarioBloqueioVotacao())
-            {
-                return BadRequest(new
-                {
-                    Sucesso = false,
-                    Mensagem = "Votação encerrada! Horário permitido: até 12:00."
-                });
-            }
+            //if (_restauranteApiService.VerificarHorarioBloqueioVotacao())
+            //{
+            //    return BadRequest(new
+            //    {
+            //        Sucesso = false,
+            //        Mensagem = "Votação encerrada! Horário permitido: até 12:00."
+            //    });
+            //}
 
             var userIdString = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userIdString))
